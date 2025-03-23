@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface Column<T> {
   header: string;
-  accessorKey: keyof T;
+  accessorKey: string;
   cell?: (row: T) => React.ReactNode;
 }
 
@@ -87,7 +87,7 @@ function DataTable<T>({
             >
               {columns.map((column, j) => (
                 <td key={j} className="p-3 text-sm">
-                  {column.cell ? column.cell(row) : String(row[column.accessorKey] || '')}
+                  {column.cell ? column.cell(row) : String(row[column.accessorKey as keyof T] || '')}
                 </td>
               ))}
             </tr>
