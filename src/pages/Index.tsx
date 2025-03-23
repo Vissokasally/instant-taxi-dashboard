@@ -1,10 +1,11 @@
+
 import React, { useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import StatsSection from '@/components/dashboard/StatsSection';
 import ChartsSection from '@/components/dashboard/ChartsSection';
 import TablesSection from '@/components/dashboard/TablesSection';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   useEffect(() => {
