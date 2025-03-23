@@ -26,6 +26,22 @@ const ChartsSection: React.FC = () => {
     };
 
     fetchTransactions();
+    
+    // Configurar listener para atualizações em tempo real
+    const channel = supabase
+      .channel('public:transacoes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public',
+        table: 'transacoes'
+      }, () => {
+        fetchTransactions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (

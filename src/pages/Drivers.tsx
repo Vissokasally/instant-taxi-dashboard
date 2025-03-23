@@ -1,97 +1,150 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import DataTable from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, Edit, Trash2, Eye } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import DriverForm from '@/components/drivers/DriverForm';
 
-// Mock data for drivers
-const driversMockData = [
-  { 
-    id: 1, 
-    nome: 'Manuel Silva', 
-    bi: '12345678LA123', 
-    cartaConducao: 'CC98765432', 
-    morada: 'Rua das Acácias, 123, Luanda', 
-    fotoUrl: 'https://randomuser.me/api/portraits/men/32.jpg'
-  },
-  { 
-    id: 2, 
-    nome: 'João Martins', 
-    bi: '87654321LA456', 
-    cartaConducao: 'CC12345678', 
-    morada: 'Avenida Ho Chi Minh, 45, Luanda', 
-    fotoUrl: 'https://randomuser.me/api/portraits/men/28.jpg'
-  },
-  { 
-    id: 3, 
-    nome: 'Maria Fernandes', 
-    bi: '23456789LA789', 
-    cartaConducao: 'CC56789012', 
-    morada: 'Rua dos Coqueiros, 78, Luanda', 
-    fotoUrl: 'https://randomuser.me/api/portraits/women/65.jpg'
-  },
-  { 
-    id: 4, 
-    nome: 'António Costa', 
-    bi: '34567890LA012', 
-    cartaConducao: 'CC34567890', 
-    morada: 'Avenida 4 de Fevereiro, 15, Luanda', 
-    fotoUrl: 'https://randomuser.me/api/portraits/men/42.jpg'
-  },
-  { 
-    id: 5, 
-    nome: 'Teresa Santos', 
-    bi: '45678901LA345', 
-    cartaConducao: 'CC90123456', 
-    morada: 'Rua Comandante Gika, 56, Luanda', 
-    fotoUrl: 'https://randomuser.me/api/portraits/women/23.jpg'
-  },
-];
-
-// Table columns
-const driversColumns = [
-  { 
-    header: 'Motorista', 
-    accessorKey: 'nome' as const,
-    cell: (row: typeof driversMockData[0]) => (
-      <div className="flex items-center gap-3">
-        <img 
-          src={row.fotoUrl} 
-          alt={row.nome} 
-          className="w-8 h-8 rounded-full object-cover border border-border"
-        />
-        <span className="font-medium">{row.nome}</span>
-      </div>
-    )
-  },
-  { header: 'BI', accessorKey: 'bi' as const },
-  { header: 'Carta de Condução', accessorKey: 'cartaConducao' as const },
-  { header: 'Morada', accessorKey: 'morada' as const },
-  { 
-    header: 'Ações', 
-    accessorKey: 'id' as const,
-    cell: (row: typeof driversMockData[0]) => (
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" className="h-8 w-8">
-          <Eye className="h-4 w-4 text-muted-foreground" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8">
-          <Edit className="h-4 w-4 text-muted-foreground" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive hover:border-destructive">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    )
-  },
-];
+// Interface para os dados do motorista
+interface Driver {
+  id: string;
+  nome: string;
+  bi: string;
+  carta_conducao: string;
+  morada: string;
+  foto_url: string | null;
+}
 
 const Drivers = () => {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openDriverForm, setOpenDriverForm] = useState(false);
+  const { toast } = useToast();
+
+  // Tabela de colunas
+  const driversColumns = [
+    { 
+      header: 'Motorista', 
+      accessorKey: 'nome' as const,
+      cell: (row: Driver) => (
+        <div className="flex items-center gap-3">
+          <img 
+            src={row.foto_url || 'https://randomuser.me/api/portraits/men/32.jpg'} 
+            alt={row.nome} 
+            className="w-8 h-8 rounded-full object-cover border border-border"
+          />
+          <span className="font-medium">{row.nome}</span>
+        </div>
+      )
+    },
+    { header: 'BI', accessorKey: 'bi' as const },
+    { header: 'Carta de Condução', accessorKey: 'carta_conducao' as const },
+    { header: 'Morada', accessorKey: 'morada' as const },
+    { 
+      header: 'Ações', 
+      accessorKey: 'id' as const,
+      cell: (row: Driver) => (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Edit className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+            onClick={() => handleDeleteDriver(row.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
+  ];
+
+  // Função para carregar motoristas
+  const fetchDrivers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('motoristas')
+        .select('*')
+        .order('nome', { ascending: true });
+      
+      if (error) throw error;
+      
+      setDrivers(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar motoristas:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar os motoristas. Tente novamente.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para excluir motorista
+  const handleDeleteDriver = async (driverId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este motorista?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('motoristas')
+        .delete()
+        .eq('id', driverId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Motorista excluído",
+        description: "O motorista foi excluído com sucesso.",
+      });
+      
+      // Atualizar a lista
+      fetchDrivers();
+    } catch (error: any) {
+      console.error('Erro ao excluir motorista:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível excluir o motorista. Tente novamente.",
+      });
+    }
+  };
+
+  // Carregar dados quando o componente for montado
+  useEffect(() => {
+    fetchDrivers();
+
+    // Configurar listener para atualizações em tempo real
+    const channel = supabase
+      .channel('public:motoristas')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public',
+        table: 'motoristas'
+      }, () => {
+        fetchDrivers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <AppLayout>
       <header className="mb-8 animate-fade-in">
@@ -101,7 +154,7 @@ const Drivers = () => {
           <p className="text-muted-foreground">
             Gerencie todos os motoristas da sua frota de táxis.
           </p>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={() => setOpenDriverForm(true)}>
             <Plus className="h-4 w-4" />
             <span>Adicionar Motorista</span>
           </Button>
@@ -112,11 +165,33 @@ const Drivers = () => {
         <div className="border border-border rounded-lg overflow-hidden">
           <DataTable 
             columns={driversColumns} 
-            data={driversMockData}
+            data={drivers}
+            loading={loading}
             onRowClick={(row) => console.log('Clicked row:', row)}
+            emptyState={
+              <div className="text-center py-10">
+                <h3 className="mt-2 text-lg font-medium">Nenhum motorista encontrado</h3>
+                <p className="mt-1 text-muted-foreground">
+                  Adicione seu primeiro motorista para começar.
+                </p>
+                <Button 
+                  className="mt-4" 
+                  onClick={() => setOpenDriverForm(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Motorista
+                </Button>
+              </div>
+            }
           />
         </div>
       </DashboardCard>
+
+      <DriverForm 
+        open={openDriverForm} 
+        onOpenChange={setOpenDriverForm} 
+        onSuccess={fetchDrivers}
+      />
     </AppLayout>
   );
 };
