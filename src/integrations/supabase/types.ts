@@ -9,7 +9,223 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      manutencoes: {
+        Row: {
+          created_at: string
+          data: string
+          estado: string
+          id: string
+          motorista_id: string | null
+          notas: string | null
+          proxima_data: string
+          updated_at: string
+          veiculo_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          estado: string
+          id?: string
+          motorista_id?: string | null
+          notas?: string | null
+          proxima_data: string
+          updated_at?: string
+          veiculo_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          estado?: string
+          id?: string
+          motorista_id?: string | null
+          notas?: string | null
+          proxima_data?: string
+          updated_at?: string
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencoes_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motoristas: {
+        Row: {
+          bi: string
+          carta_conducao: string
+          created_at: string
+          foto_url: string | null
+          id: string
+          morada: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          bi: string
+          carta_conducao: string
+          created_at?: string
+          foto_url?: string | null
+          id?: string
+          morada: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          bi?: string
+          carta_conducao?: string
+          created_at?: string
+          foto_url?: string | null
+          id?: string
+          morada?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reparacoes: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          peca: string
+          preco: number
+          recibo: boolean
+          recibo_url: string | null
+          updated_at: string
+          veiculo_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          descricao?: string | null
+          id?: string
+          peca: string
+          preco: number
+          recibo?: boolean
+          recibo_url?: string | null
+          updated_at?: string
+          veiculo_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          peca?: string
+          preco?: number
+          recibo?: boolean
+          recibo_url?: string | null
+          updated_at?: string
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reparacoes_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transacoes: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          recibo: boolean
+          recibo_url: string | null
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data: string
+          descricao?: string | null
+          id?: string
+          recibo?: boolean
+          recibo_url?: string | null
+          tipo: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          recibo?: boolean
+          recibo_url?: string | null
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      veiculos: {
+        Row: {
+          ano: number
+          created_at: string
+          id: string
+          marca: string
+          matricula: string
+          modelo: string
+          motorista_id: string | null
+          quilometragem: number
+          ultima_manutencao: string | null
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          id?: string
+          marca: string
+          matricula: string
+          modelo: string
+          motorista_id?: string | null
+          quilometragem?: number
+          ultima_manutencao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          id?: string
+          marca?: string
+          matricula?: string
+          modelo?: string
+          motorista_id?: string | null
+          quilometragem?: number
+          ultima_manutencao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_motorista"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
