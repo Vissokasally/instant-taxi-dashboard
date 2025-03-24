@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Camera } from 'lucide-react';
+import { Upload, Camera, FileText } from 'lucide-react';
 
 const formSchema = z.object({
   nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres."),
@@ -24,6 +24,8 @@ const formSchema = z.object({
   cartaConducao: z.string().min(5, "A carta de condução é obrigatória."),
   morada: z.string().min(5, "A morada é obrigatória."),
   foto: z.instanceof(File).optional(),
+  bi_pdf: z.instanceof(File).optional(),
+  carta_pdf: z.instanceof(File).optional(),
 });
 
 type DriverFormValues = z.infer<typeof formSchema>;
@@ -36,9 +38,14 @@ interface DriverFormProps {
 
 export default function DriverForm({ open, onOpenChange, onSuccess }: DriverFormProps) {
   const { toast } = useToast();
-  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [biFileName, setBiFileName] = useState<string | null>(null);
+  const [cartaFileName, setCartaFileName] = useState<string | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const biFileInputRef = useRef<HTMLInputElement>(null);
+  const cartaFileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<DriverFormValues>({
     resolver: zodResolver(formSchema),
@@ -62,14 +69,40 @@ export default function DriverForm({ open, onOpenChange, onSuccess }: DriverForm
     }
   };
 
+  const handleBiPdfChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      form.setValue('bi_pdf', file);
+      setBiFileName(file.name);
+    }
+  };
+
+  const handleCartaPdfChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      form.setValue('carta_pdf', file);
+      setCartaFileName(file.name);
+    }
+  };
+
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  const triggerBiFileInput = () => {
+    biFileInputRef.current?.click();
+  };
+
+  const triggerCartaFileInput = () => {
+    cartaFileInputRef.current?.click();
   };
 
   async function onSubmit(values: DriverFormValues) {
     try {
       setIsSubmitting(true);
       let fotoUrl = null;
+      let biPdfUrl = null;
+      let cartaPdfUrl = null;
 
       // Upload da foto se existir
       if (values.foto) {
@@ -77,7 +110,7 @@ export default function DriverForm({ open, onOpenChange, onSuccess }: DriverForm
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         const filePath = `motoristas/${fileName}`;
 
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('motoristas')
           .upload(filePath, values.foto);
 
@@ -93,6 +126,50 @@ export default function DriverForm({ open, onOpenChange, onSuccess }: DriverForm
         fotoUrl = publicUrl;
       }
       
+      // Upload do PDF do BI se existir
+      if (values.bi_pdf) {
+        const fileExt = values.bi_pdf.name.split('.').pop();
+        const fileName = `bi_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('documentos_motoristas')
+          .upload(filePath, values.bi_pdf);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Obter URL pública do documento
+        const { data: { publicUrl } } = supabase.storage
+          .from('documentos_motoristas')
+          .getPublicUrl(filePath);
+          
+        biPdfUrl = publicUrl;
+      }
+      
+      // Upload do PDF da Carta de Condução se existir
+      if (values.carta_pdf) {
+        const fileExt = values.carta_pdf.name.split('.').pop();
+        const fileName = `carta_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('documentos_motoristas')
+          .upload(filePath, values.carta_pdf);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Obter URL pública do documento
+        const { data: { publicUrl } } = supabase.storage
+          .from('documentos_motoristas')
+          .getPublicUrl(filePath);
+          
+        cartaPdfUrl = publicUrl;
+      }
+      
       // Inserir motorista no banco de dados
       const { error } = await supabase
         .from('motoristas')
@@ -102,6 +179,8 @@ export default function DriverForm({ open, onOpenChange, onSuccess }: DriverForm
           carta_conducao: values.cartaConducao,
           morada: values.morada,
           foto_url: fotoUrl,
+          bi_pdf_url: biPdfUrl,
+          carta_pdf_url: cartaPdfUrl
         });
 
       if (error) throw error;
@@ -113,6 +192,8 @@ export default function DriverForm({ open, onOpenChange, onSuccess }: DriverForm
       
       form.reset();
       setImagePreview(null);
+      setBiFileName(null);
+      setCartaFileName(null);
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error: any) {
@@ -217,6 +298,58 @@ export default function DriverForm({ open, onOpenChange, onSuccess }: DriverForm
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FormLabel>Documento do BI (PDF)</FormLabel>
+                <div className="mt-1">
+                  <input
+                    type="file"
+                    ref={biFileInputRef}
+                    onChange={handleBiPdfChange}
+                    accept="application/pdf"
+                    className="hidden"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={triggerBiFileInput}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="truncate">
+                      {biFileName ? biFileName : "Anexar BI (PDF)"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <FormLabel>Carta de Condução (PDF)</FormLabel>
+                <div className="mt-1">
+                  <input
+                    type="file"
+                    ref={cartaFileInputRef}
+                    onChange={handleCartaPdfChange}
+                    accept="application/pdf"
+                    className="hidden"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={triggerCartaFileInput}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="truncate">
+                      {cartaFileName ? cartaFileName : "Anexar Carta (PDF)"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             <DialogFooter>
               <Button type="submit" className="w-full" disabled={isSubmitting}>

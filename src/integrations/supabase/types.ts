@@ -11,46 +11,30 @@ export type Database = {
     Tables: {
       manutencoes: {
         Row: {
-          created_at: string
-          data: string
-          estado: string
+          created_at: string | null
+          data_agendada: string
           id: string
-          motorista_id: string | null
-          notas: string | null
-          proxima_data: string
-          updated_at: string
-          veiculo_id: string
+          realizada: boolean | null
+          updated_at: string | null
+          veiculo_id: string | null
         }
         Insert: {
-          created_at?: string
-          data: string
-          estado: string
+          created_at?: string | null
+          data_agendada: string
           id?: string
-          motorista_id?: string | null
-          notas?: string | null
-          proxima_data: string
-          updated_at?: string
-          veiculo_id: string
+          realizada?: boolean | null
+          updated_at?: string | null
+          veiculo_id?: string | null
         }
         Update: {
-          created_at?: string
-          data?: string
-          estado?: string
+          created_at?: string | null
+          data_agendada?: string
           id?: string
-          motorista_id?: string | null
-          notas?: string | null
-          proxima_data?: string
-          updated_at?: string
-          veiculo_id?: string
+          realizada?: boolean | null
+          updated_at?: string | null
+          veiculo_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "manutencoes_motorista_id_fkey"
-            columns: ["motorista_id"]
-            isOneToOne: false
-            referencedRelation: "motoristas"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "manutencoes_veiculo_id_fkey"
             columns: ["veiculo_id"]
@@ -63,72 +47,75 @@ export type Database = {
       motoristas: {
         Row: {
           bi: string
+          bi_pdf_url: string | null
           carta_conducao: string
-          created_at: string
+          carta_pdf_url: string | null
+          created_at: string | null
           foto_url: string | null
           id: string
           morada: string
           nome: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           bi: string
+          bi_pdf_url?: string | null
           carta_conducao: string
-          created_at?: string
+          carta_pdf_url?: string | null
+          created_at?: string | null
           foto_url?: string | null
           id?: string
           morada: string
           nome: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           bi?: string
+          bi_pdf_url?: string | null
           carta_conducao?: string
-          created_at?: string
+          carta_pdf_url?: string | null
+          created_at?: string | null
           foto_url?: string | null
           id?: string
           morada?: string
           nome?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
       reparacoes: {
         Row: {
-          created_at: string
+          created_at: string | null
           data: string
           descricao: string | null
           id: string
           peca: string
           preco: number
-          recibo: boolean
-          recibo_url: string | null
-          updated_at: string
-          veiculo_id: string
+          recibo_pdf_url: string | null
+          updated_at: string | null
+          veiculo_id: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           data: string
           descricao?: string | null
           id?: string
           peca: string
           preco: number
-          recibo?: boolean
-          recibo_url?: string | null
-          updated_at?: string
-          veiculo_id: string
+          recibo_pdf_url?: string | null
+          updated_at?: string | null
+          veiculo_id?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           data?: string
           descricao?: string | null
           id?: string
           peca?: string
           preco?: number
-          recibo?: boolean
-          recibo_url?: string | null
-          updated_at?: string
-          veiculo_id?: string
+          recibo_pdf_url?: string | null
+          updated_at?: string | null
+          veiculo_id?: string | null
         }
         Relationships: [
           {
@@ -143,38 +130,35 @@ export type Database = {
       transacoes: {
         Row: {
           categoria: string
-          created_at: string
+          created_at: string | null
           data: string
           descricao: string | null
           id: string
-          recibo: boolean
-          recibo_url: string | null
+          recibo_pdf_url: string | null
           tipo: string
-          updated_at: string
+          updated_at: string | null
           valor: number
         }
         Insert: {
           categoria: string
-          created_at?: string
+          created_at?: string | null
           data: string
           descricao?: string | null
           id?: string
-          recibo?: boolean
-          recibo_url?: string | null
+          recibo_pdf_url?: string | null
           tipo: string
-          updated_at?: string
+          updated_at?: string | null
           valor: number
         }
         Update: {
           categoria?: string
-          created_at?: string
+          created_at?: string | null
           data?: string
           descricao?: string | null
           id?: string
-          recibo?: boolean
-          recibo_url?: string | null
+          recibo_pdf_url?: string | null
           tipo?: string
-          updated_at?: string
+          updated_at?: string | null
           valor?: number
         }
         Relationships: []
@@ -182,43 +166,40 @@ export type Database = {
       veiculos: {
         Row: {
           ano: number
-          created_at: string
+          created_at: string | null
           id: string
           marca: string
           matricula: string
           modelo: string
           motorista_id: string | null
           quilometragem: number
-          ultima_manutencao: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           ano: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           marca: string
           matricula: string
           modelo: string
           motorista_id?: string | null
-          quilometragem?: number
-          ultima_manutencao?: string | null
-          updated_at?: string
+          quilometragem: number
+          updated_at?: string | null
         }
         Update: {
           ano?: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           marca?: string
           matricula?: string
           modelo?: string
           motorista_id?: string | null
           quilometragem?: number
-          ultima_manutencao?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_motorista"
+            foreignKeyName: "veiculos_motorista_id_fkey"
             columns: ["motorista_id"]
             isOneToOne: false
             referencedRelation: "motoristas"
