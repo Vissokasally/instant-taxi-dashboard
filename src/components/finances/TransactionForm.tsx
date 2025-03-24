@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formSchema, TransactionFormValues, transactionCategories } from './transaction-types';
@@ -79,6 +79,9 @@ export default function TransactionForm({ open, onOpenChange, onSuccess }: Trans
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nova Transação</DialogTitle>
+          <DialogDescription>
+            Adicione uma nova transação financeira ao sistema.
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>

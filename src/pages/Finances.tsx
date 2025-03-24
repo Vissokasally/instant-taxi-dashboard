@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
@@ -32,6 +31,8 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import TransactionForm from '@/components/finances/TransactionForm';
 import { useToast } from '@/hooks/use-toast';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = ['#3b82f6', '#f97316', '#8b5cf6', '#eab308', '#6366f1', '#9ca3af'];
 
@@ -49,7 +50,6 @@ const Finances = () => {
   const [filterType, setFilterType] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Table columns
   const transactionsColumns = [
     { header: 'Data', 
       accessorKey: 'data' as const,
@@ -125,7 +125,6 @@ const Finances = () => {
     },
   ];
 
-  // Função para carregar transações
   const fetchTransactions = async () => {
     setLoading(true);
     try {
@@ -155,7 +154,6 @@ const Finances = () => {
     }
   };
 
-  // Calcular resumo financeiro
   const calculateSummary = (data: any[]) => {
     const entradas = data
       .filter(t => t.tipo === 'Entrada')
@@ -172,7 +170,6 @@ const Finances = () => {
     });
   };
 
-  // Calcular despesas por categoria
   const calculateExpensesByCategory = (data: any[]) => {
     const expenses = data.filter(t => t.tipo === 'Saída');
     const categories: Record<string, number> = {};
@@ -194,9 +191,7 @@ const Finances = () => {
     setExpenseCategoryData(categoryData);
   };
 
-  // Calcular receitas mensais
   const calculateMonthlyRevenue = (data: any[]) => {
-    // Agrupa transações por mês
     const months: Record<string, { entrada: number, saida: number }> = {};
     
     data.forEach(t => {
@@ -214,7 +209,6 @@ const Finances = () => {
       }
     });
     
-    // Converte para formato para o gráfico
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const chartData = Object.entries(months).map(([monthYear, values]) => {
       const [year, month] = monthYear.split('-').map(Number);
@@ -225,20 +219,70 @@ const Finances = () => {
       };
     });
     
-    // Ordena os meses
     setMonthlyRevenueData(chartData);
   };
 
-  // Função para exportar relatório
   const exportReport = () => {
-    // Implementação futura: exportar para PDF/Excel
-    toast({
-      title: "Exportação",
-      description: "Funcionalidade de exportação será implementada em breve.",
-    });
+    try {
+      const doc = new jsPDF();
+      
+      doc.setFontSize(18);
+      doc.text('Relatório Financeiro', 14, 22);
+      
+      doc.setFontSize(10);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
+      
+      const tableColumn = ["Data", "Tipo", "Categoria", "Descrição", "Valor"];
+      const tableRows = transactions.map((t) => [
+        format(parseISO(t.data), 'dd/MM/yyyy'),
+        t.tipo,
+        t.categoria,
+        t.descricao || '-',
+        `${t.tipo === 'Entrada' ? '+' : '-'} ${Number(t.valor).toLocaleString('pt-AO')} AOA`
+      ]);
+      
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+        theme: 'grid',
+        styles: {
+          fontSize: 8,
+          cellPadding: 3
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+      
+      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.text('Resumo Financeiro:', 14, finalY);
+      doc.setFontSize(10);
+      doc.text(`Entradas: ${summaryData.entradas.toLocaleString('pt-AO')} AOA`, 14, finalY + 7);
+      doc.text(`Saídas: ${summaryData.saidas.toLocaleString('pt-AO')} AOA`, 14, finalY + 14);
+      doc.text(`Balanço: ${summaryData.balanco.toLocaleString('pt-AO')} AOA`, 14, finalY + 21);
+      
+      doc.save(`relatorio_financeiro_${format(new Date(), 'dd-MM-yyyy')}.pdf`);
+      
+      toast({
+        title: "Relatório exportado",
+        description: "O relatório foi exportado com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível exportar o relatório. Tente novamente."
+      });
+    }
   };
 
-  // Carregar dados quando o componente for montado
   useEffect(() => {
     fetchTransactions();
   }, [filterType]);

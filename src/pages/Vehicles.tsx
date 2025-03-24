@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
@@ -10,8 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import { createPdfReport } from '@/utils/pdfGenerator';
 
 type Vehicle = {
   id: string;
@@ -33,7 +31,6 @@ const Vehicles = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Buscar veículos com join para informações do motorista
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
     queryFn: async () => {
@@ -46,7 +43,6 @@ const Vehicles = () => {
       
       if (!data || data.length === 0) return [];
       
-      // Buscar informações dos motoristas
       const driverIds = data.filter(v => v.motorista_id).map(v => v.motorista_id);
       let driversData: any[] = [];
       
@@ -61,7 +57,6 @@ const Vehicles = () => {
         }
       }
       
-      // Combinar os dados
       const vehiclesWithDrivers = data.map(vehicle => {
         let driverInfo;
         
@@ -85,7 +80,6 @@ const Vehicles = () => {
     }
   });
 
-  // Configurar listener para atualizações em tempo real
   useEffect(() => {
     const channel = supabase
       .channel('public:veiculos')
@@ -103,7 +97,6 @@ const Vehicles = () => {
     };
   }, [queryClient]);
   
-  // Função para excluir um veículo
   const handleDeleteVehicle = async (id: string) => {
     try {
       const { error } = await supabase
@@ -127,23 +120,11 @@ const Vehicles = () => {
     }
   };
 
-  // Função para exportar relatório de veículos
   const exportVehicleReport = () => {
     try {
-      // Criar um novo documento PDF
-      const doc = new jsPDF();
+      const headers = ["Marca", "Modelo", "Matrícula", "Ano", "Quilometragem", "Motorista"];
       
-      // Adicionar título
-      doc.setFontSize(18);
-      doc.text('Relatório de Veículos', 14, 22);
-      
-      // Adicionar data de geração
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
-      
-      // Preparar dados para a tabela
-      const tableColumn = ["Marca", "Modelo", "Matrícula", "Ano", "Quilometragem", "Motorista"];
-      const tableRows = vehicles.map((vehicle) => [
+      const rows = vehicles.map((vehicle) => [
         vehicle.marca,
         vehicle.modelo,
         vehicle.matricula,
@@ -152,56 +133,24 @@ const Vehicles = () => {
         vehicle.motorista?.nome || 'Não atribuído'
       ]);
       
-      // Adicionar tabela ao PDF
-      (doc as any).autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 35,
-        theme: 'grid',
-        styles: {
-          fontSize: 8,
-          cellPadding: 3
-        },
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: 255
-        }
-      });
+      const summaryData = [
+        { label: "Total de Veículos", value: totalVehicles.toString() },
+        { label: "Quilometragem Média", value: Math.round(averageKm).toLocaleString('pt-AO') + ' km' },
+        { label: "Idade Média", value: averageAge.toFixed(1) + ' anos' }
+      ];
       
-      // Adicionar rodapé com estatísticas
-      const averageAge = vehicles.reduce((sum, v) => sum + (new Date().getFullYear() - v.ano), 0) / vehicles.length || 0;
-      const averageKm = vehicles.reduce((sum, v) => sum + v.quilometragem, 0) / vehicles.length || 0;
-      
-      doc.setFontSize(12);
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
-      doc.text(`Total de Veículos: ${vehicles.length}`, 14, finalY);
-      doc.text(`Quilometragem Média: ${averageKm.toLocaleString('pt-AO')} km`, 14, finalY + 8);
-      doc.text(`Idade Média: ${averageAge.toFixed(1)} anos`, 14, finalY + 16);
-      
-      // Salvar o PDF
-      const fileName = `relatorio_veiculos_${format(new Date(), 'dd-MM-yyyy')}.pdf`;
-      doc.save(fileName);
-      
-      // Fazer upload do relatório para Supabase Storage (opcional)
-      const pdfBlob = doc.output('blob');
-      const uploadFile = async () => {
-        try {
-          const { error } = await supabase.storage
-            .from('relatorios')
-            .upload(fileName, pdfBlob);
-            
-          if (error) throw error;
-        } catch (error) {
-          console.error('Erro ao fazer upload do relatório:', error);
-        }
-      };
-      
-      uploadFile();
+      const result = createPdfReport(
+        "Relatório de Veículos",
+        headers,
+        rows,
+        summaryData
+      );
       
       toast({
-        title: "Relatório exportado",
-        description: "O relatório foi exportado com sucesso."
+        title: result.success ? "Relatório exportado" : "Erro",
+        description: result.message
       });
+      
     } catch (error) {
       console.error('Erro ao exportar relatório:', error);
       toast({
@@ -212,7 +161,6 @@ const Vehicles = () => {
     }
   };
 
-  // Calcular estatísticas
   const totalVehicles = vehicles.length;
   const averageKm = totalVehicles > 0 
     ? vehicles.reduce((sum, v) => sum + v.quilometragem, 0) / totalVehicles 
@@ -221,7 +169,6 @@ const Vehicles = () => {
     ? vehicles.reduce((sum, v) => sum + (new Date().getFullYear() - v.ano), 0) / totalVehicles 
     : 0;
 
-  // Tabela de veículos
   const vehiclesColumns = [
     { 
       header: 'Veículo', 
