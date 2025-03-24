@@ -2,45 +2,19 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Users, Car } from 'lucide-react';
+import { Car } from 'lucide-react';
 
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-
-const formSchema = z.object({
-  marca: z.string().min(1, "A marca é obrigatória."),
-  modelo: z.string().min(1, "O modelo é obrigatório."),
-  matricula: z.string().min(5, "A matrícula é obrigatória."),
-  ano: z.string().min(4, "O ano é obrigatório.").refine((val) => {
-    const year = parseInt(val, 10);
-    return !isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1;
-  }, {
-    message: `O ano deve ser válido (entre 1900 e ${new Date().getFullYear() + 1}).`,
-  }),
-  quilometragem: z.string().min(1, "A quilometragem é obrigatória.").refine((val) => {
-    const km = parseInt(val, 10);
-    return !isNaN(km) && km >= 0;
-  }, {
-    message: "A quilometragem deve ser um número válido maior ou igual a zero.",
-  }),
-  motorista_id: z.string().optional(),
-});
-
-type VehicleFormValues = z.infer<typeof formSchema>;
+import { formSchema, VehicleFormValues } from './vehicle-types';
+import { BrandModelFields } from './vehicle-fields/BrandModelFields';
+import { LicensePlateField } from './vehicle-fields/LicensePlateField';
+import { YearMileageFields } from './vehicle-fields/YearMileageFields';
+import { DriverField } from './vehicle-fields/DriverField';
 
 interface VehicleFormProps {
   open: boolean;
@@ -124,113 +98,13 @@ export default function VehicleForm({ open, onOpenChange, onSuccess }: VehicleFo
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="marca"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Marca</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Toyota" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="modelo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Modelo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Corolla" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="matricula"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Matrícula</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: LD-12-34-AB" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="ano"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ano</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: 2020" type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="quilometragem"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quilometragem</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: 50000" type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="motorista_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Motorista (opcional)</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    disabled={isLoadingDrivers}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o motorista (opcional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">
-                        <span className="text-muted-foreground">Nenhum motorista</span>
-                      </SelectItem>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id}>
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{driver.nome}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <BrandModelFields form={form} />
+            <LicensePlateField form={form} />
+            <YearMileageFields form={form} />
+            <DriverField 
+              form={form} 
+              drivers={drivers} 
+              isLoading={isLoadingDrivers} 
             />
 
             <DialogFooter>
