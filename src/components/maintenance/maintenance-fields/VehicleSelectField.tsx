@@ -44,12 +44,15 @@ export function VehicleSelectField({ form, vehicles, isLoading }: VehicleSelectF
             </FormControl>
             <SelectContent>
               {vehicles.map((vehicle) => (
-                <SelectItem key={vehicle.id} value={vehicle.id}>
-                  <div className="flex items-center gap-2">
-                    <Car className="h-4 w-4 text-muted-foreground" />
-                    <span>{vehicle.marca} {vehicle.modelo} - {vehicle.matricula}</span>
-                  </div>
-                </SelectItem>
+                // Make sure vehicle.id is not an empty string
+                vehicle.id ? (
+                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-muted-foreground" />
+                      <span>{vehicle.marca} {vehicle.modelo} - {vehicle.matricula}</span>
+                    </div>
+                  </SelectItem>
+                ) : null
               ))}
             </SelectContent>
           </Select>

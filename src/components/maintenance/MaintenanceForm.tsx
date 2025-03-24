@@ -37,7 +37,8 @@ export default function MaintenanceForm({ open, onOpenChange, onSuccess }: Maint
         .order('marca', { ascending: true });
       
       if (error) throw error;
-      return data || [];
+      // Filter out any vehicles with empty or null IDs
+      return (data || []).filter(vehicle => vehicle.id);
     }
   });
   
