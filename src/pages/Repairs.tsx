@@ -30,6 +30,7 @@ type Repair = {
 
 const Repairs = () => {
   const [openForm, setOpenForm] = useState(false);
+  const [selectedRepairId, setSelectedRepairId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -114,6 +115,12 @@ const Repairs = () => {
         description: error.message || "Não foi possível excluir a reparação. Tente novamente."
       });
     }
+  };
+
+  // Função para editar uma reparação
+  const handleEditRepair = (id: string) => {
+    setSelectedRepairId(id);
+    setOpenForm(true);
   };
 
   // Função para exportar relatório de reparações
@@ -269,6 +276,14 @@ const Repairs = () => {
           <Button 
             variant="outline" 
             size="icon" 
+            className="h-8 w-8"
+            onClick={() => handleEditRepair(row.id)}
+          >
+            <Edit className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
             className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
             onClick={() => handleDeleteRepair(row.id)}
           >
@@ -299,7 +314,10 @@ const Repairs = () => {
             </Button>
             <Button 
               className="flex items-center gap-2"
-              onClick={() => setOpenForm(true)}
+              onClick={() => {
+                setSelectedRepairId(undefined);
+                setOpenForm(true);
+              }}
             >
               <Plus className="h-4 w-4" />
               <span>Registrar Reparação</span>
@@ -347,7 +365,10 @@ const Repairs = () => {
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={() => setOpenForm(true)}
+                  onClick={() => {
+                    setSelectedRepairId(undefined);
+                    setOpenForm(true);
+                  }}
                 >
                   Registrar Reparação
                 </Button>
@@ -361,6 +382,7 @@ const Repairs = () => {
         open={openForm} 
         onOpenChange={setOpenForm} 
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['repairs'] })}
+        repairId={selectedRepairId}
       />
     </AppLayout>
   );

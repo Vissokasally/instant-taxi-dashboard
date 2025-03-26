@@ -17,6 +17,8 @@ interface Driver {
   carta_conducao: string;
   morada: string;
   foto_url: string | null;
+  bi_pdf_url: string | null;
+  carta_pdf_url: string | null;
 }
 
 const Drivers = () => {
@@ -50,9 +52,6 @@ const Drivers = () => {
       accessorKey: 'id' as const,
       cell: (row: Driver) => (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </Button>
           <Button 
             variant="outline" 
             size="icon" 
@@ -60,9 +59,6 @@ const Drivers = () => {
             onClick={() => handleEditDriver(row.id)}
           >
             <Edit className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <FileText className="h-4 w-4 text-muted-foreground" />
           </Button>
           <Button 
             variant="outline" 
@@ -185,7 +181,6 @@ const Drivers = () => {
             columns={driversColumns} 
             data={drivers}
             loading={loading}
-            onRowClick={(row) => console.log('Clicked row:', row)}
             emptyState={
               <div className="text-center py-10">
                 <h3 className="mt-2 text-lg font-medium">Nenhum motorista encontrado</h3>
