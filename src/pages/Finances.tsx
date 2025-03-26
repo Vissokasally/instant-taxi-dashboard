@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
@@ -11,7 +10,8 @@ import {
   Filter, 
   TrendingUp, 
   TrendingDown, 
-  DollarSign, 
+  Edit,
+  Trash2,
   PieChart
 } from 'lucide-react';
 import { 
@@ -39,6 +39,7 @@ const COLORS = ['#3b82f6', '#f97316', '#8b5cf6', '#eab308', '#6366f1', '#9ca3af'
 
 const Finances = () => {
   const [openTransactionForm, setOpenTransactionForm] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | undefined>(undefined);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState({
@@ -129,6 +130,30 @@ const Finances = () => {
         </>
       )
     },
+    { 
+      header: 'Ações', 
+      accessorKey: 'id' as const,
+      cell: (row: any) => (
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={() => handleEditTransaction(row.id)}
+          >
+            <Edit className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+            onClick={() => handleDeleteTransaction(row.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
   ];
 
   const fetchTransactions = async () => {
@@ -157,6 +182,43 @@ const Finances = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditTransaction = (transactionId: string) => {
+    setSelectedTransactionId(transactionId);
+    setOpenTransactionForm(true);
+  };
+
+  const handleAddTransaction = () => {
+    setSelectedTransactionId(undefined);
+    setOpenTransactionForm(true);
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta transação?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('transacoes')
+        .delete()
+        .eq('id', transactionId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Transação excluída",
+        description: "A transação foi excluída com sucesso.",
+      });
+      
+      fetchTransactions();
+    } catch (error: any) {
+      console.error('Erro ao excluir transação:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível excluir a transação. Tente novamente.",
+      });
     }
   };
 
@@ -278,6 +340,21 @@ const Finances = () => {
 
   useEffect(() => {
     fetchTransactions();
+
+    const channel = supabase
+      .channel('public:transacoes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public',
+        table: 'transacoes'
+      }, () => {
+        fetchTransactions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [filterType]);
 
   return (
@@ -294,7 +371,7 @@ const Finances = () => {
               <Download className="h-4 w-4" />
               <span>Relatório</span>
             </Button>
-            <Button className="flex items-center gap-2" onClick={() => setOpenTransactionForm(true)}>
+            <Button className="flex items-center gap-2" onClick={handleAddTransaction}>
               <Plus className="h-4 w-4" />
               <span>Nova Transação</span>
             </Button>
@@ -452,7 +529,7 @@ const Finances = () => {
                 </p>
                 <Button 
                   className="mt-4" 
-                  onClick={() => setOpenTransactionForm(true)}
+                  onClick={handleAddTransaction}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Transação
@@ -467,6 +544,7 @@ const Finances = () => {
         open={openTransactionForm} 
         onOpenChange={setOpenTransactionForm} 
         onSuccess={fetchTransactions}
+        transactionId={selectedTransactionId}
       />
     </AppLayout>
   );

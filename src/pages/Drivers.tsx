@@ -23,6 +23,7 @@ const Drivers = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDriverForm, setOpenDriverForm] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   // Tabela de colunas
@@ -52,7 +53,12 @@ const Drivers = () => {
           <Button variant="outline" size="icon" className="h-8 w-8">
             <Eye className="h-4 w-4 text-muted-foreground" />
           </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={() => handleEditDriver(row.id)}
+          >
             <Edit className="h-4 w-4 text-muted-foreground" />
           </Button>
           <Button variant="outline" size="icon" className="h-8 w-8">
@@ -93,6 +99,18 @@ const Drivers = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para abrir o formulário de edição
+  const handleEditDriver = (driverId: string) => {
+    setSelectedDriverId(driverId);
+    setOpenDriverForm(true);
+  };
+
+  // Função para abrir o formulário de adição
+  const handleAddDriver = () => {
+    setSelectedDriverId(undefined);
+    setOpenDriverForm(true);
   };
 
   // Função para excluir motorista
@@ -154,7 +172,7 @@ const Drivers = () => {
           <p className="text-muted-foreground">
             Gerencie todos os motoristas da sua frota de táxis.
           </p>
-          <Button className="flex items-center gap-2" onClick={() => setOpenDriverForm(true)}>
+          <Button className="flex items-center gap-2" onClick={handleAddDriver}>
             <Plus className="h-4 w-4" />
             <span>Adicionar Motorista</span>
           </Button>
@@ -176,7 +194,7 @@ const Drivers = () => {
                 </p>
                 <Button 
                   className="mt-4" 
-                  onClick={() => setOpenDriverForm(true)}
+                  onClick={handleAddDriver}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Motorista
@@ -191,6 +209,7 @@ const Drivers = () => {
         open={openDriverForm} 
         onOpenChange={setOpenDriverForm} 
         onSuccess={fetchDrivers}
+        driverId={selectedDriverId}
       />
     </AppLayout>
   );
