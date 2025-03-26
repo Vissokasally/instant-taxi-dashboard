@@ -55,6 +55,9 @@ export default function VehicleForm({ open, onOpenChange, onSuccess }: VehicleFo
     try {
       setIsSubmitting(true);
       
+      // Process the driver ID - if "none" is selected, set to null
+      const driverId = values.motorista_id === 'none' ? null : values.motorista_id || null;
+      
       // Inserir veículo no banco de dados
       const { error } = await supabase
         .from('veiculos')
@@ -64,7 +67,7 @@ export default function VehicleForm({ open, onOpenChange, onSuccess }: VehicleFo
           matricula: values.matricula,
           ano: parseInt(values.ano, 10),
           quilometragem: parseInt(values.quilometragem, 10),
-          motorista_id: values.motorista_id || null,
+          motorista_id: driverId,
         });
 
       if (error) throw error;

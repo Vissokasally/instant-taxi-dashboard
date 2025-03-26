@@ -37,7 +37,7 @@ export function DriverField({ form, drivers, isLoading }: DriverFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">
+              <SelectItem value="none">
                 <span className="text-muted-foreground">Nenhum motorista</span>
               </SelectItem>
               {drivers.map((driver) => (

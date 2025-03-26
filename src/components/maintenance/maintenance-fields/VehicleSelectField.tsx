@@ -44,7 +44,7 @@ export function VehicleSelectField({ form, vehicles, isLoading }: VehicleSelectF
             </FormControl>
             <SelectContent>
               {vehicles.map((vehicle) => (
-                // Make sure vehicle.id is not an empty string
+                // Make sure vehicle.id is not empty
                 vehicle.id ? (
                   <SelectItem key={vehicle.id} value={vehicle.id}>
                     <div className="flex items-center gap-2">
