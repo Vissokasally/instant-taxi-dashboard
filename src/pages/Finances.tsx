@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
@@ -31,8 +32,8 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import TransactionForm from '@/components/finances/TransactionForm';
 import { useToast } from '@/hooks/use-toast';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { createPdfReport } from '@/utils/pdfGenerator';
+import { viewDocument, downloadDocument } from '@/utils/documentUtils';
 
 const COLORS = ['#3b82f6', '#f97316', '#8b5cf6', '#eab308', '#6366f1', '#9ca3af'];
 
@@ -109,11 +110,16 @@ const Finances = () => {
     },
     { 
       header: 'Recibo', 
-      accessorKey: 'recibo' as const,
+      accessorKey: 'recibo_pdf_url' as const,
       cell: (row: any) => (
         <>
-          {row.recibo ? (
-            <Button variant="outline" size="sm" className="h-8 px-3 flex items-center gap-2">
+          {row.recibo_pdf_url ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 px-3 flex items-center gap-2"
+              onClick={() => viewDocument(row.recibo_pdf_url)}
+            >
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span>Ver Recibo</span>
             </Button>
@@ -181,7 +187,6 @@ const Finances = () => {
       categories[exp.categoria] += Number(exp.valor);
     });
     
-    const colors = Object.keys(COLORS);
     const categoryData = Object.entries(categories).map(([name, value], index) => ({
       name,
       value,
@@ -224,15 +229,17 @@ const Finances = () => {
 
   const exportReport = () => {
     try {
-      const doc = new jsPDF();
+      if (!transactions || transactions.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não há transações para exportar."
+        });
+        return;
+      }
       
-      doc.setFontSize(18);
-      doc.text('Relatório Financeiro', 14, 22);
+      const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor"];
       
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
-      
-      const tableColumn = ["Data", "Tipo", "Categoria", "Descrição", "Valor"];
       const tableRows = transactions.map((t) => [
         format(parseISO(t.data), 'dd/MM/yyyy'),
         t.tipo,
@@ -241,38 +248,24 @@ const Finances = () => {
         `${t.tipo === 'Entrada' ? '+' : '-'} ${Number(t.valor).toLocaleString('pt-AO')} AOA`
       ]);
       
-      autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 35,
-        theme: 'grid',
-        styles: {
-          fontSize: 8,
-          cellPadding: 3
-        },
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: 255
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        }
-      });
+      const summaryItems = [
+        { label: "Entradas Totais", value: `${summaryData.entradas.toLocaleString('pt-AO')} AOA` },
+        { label: "Saídas Totais", value: `${summaryData.saidas.toLocaleString('pt-AO')} AOA` },
+        { label: "Balanço", value: `${summaryData.balanco.toLocaleString('pt-AO')} AOA` }
+      ];
       
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
-      doc.setFontSize(12);
-      doc.text('Resumo Financeiro:', 14, finalY);
-      doc.setFontSize(10);
-      doc.text(`Entradas: ${summaryData.entradas.toLocaleString('pt-AO')} AOA`, 14, finalY + 7);
-      doc.text(`Saídas: ${summaryData.saidas.toLocaleString('pt-AO')} AOA`, 14, finalY + 14);
-      doc.text(`Balanço: ${summaryData.balanco.toLocaleString('pt-AO')} AOA`, 14, finalY + 21);
-      
-      doc.save(`relatorio_financeiro_${format(new Date(), 'dd-MM-yyyy')}.pdf`);
+      const result = createPdfReport(
+        "Relatório Financeiro",
+        headers,
+        tableRows,
+        summaryItems
+      );
       
       toast({
-        title: "Relatório exportado",
-        description: "O relatório foi exportado com sucesso."
+        title: result.success ? "Relatório exportado" : "Erro",
+        description: result.message
       });
+      
     } catch (error) {
       console.error('Erro ao exportar relatório:', error);
       toast({

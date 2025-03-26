@@ -10,7 +10,15 @@ export const getDocumentUrl = (bucket: string, path: string) => {
 // Function to download a document from a URL
 export const downloadDocument = async (url: string, filename: string) => {
   try {
+    if (!url) {
+      return { success: false, message: 'URL inválida' };
+    }
+    
     const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Falha ao baixar o arquivo');
+    }
+    
     const blob = await response.blob();
     const objectUrl = URL.createObjectURL(blob);
     

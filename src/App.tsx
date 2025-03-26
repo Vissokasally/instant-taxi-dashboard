@@ -27,8 +27,6 @@ const App = () => (
           <Route path="/manutencao" element={<Maintenance />} />
           <Route path="/reparacoes" element={<Repairs />} />
           <Route path="/financas" element={<Finances />} />
-          {/* Add a redirect for Brazilian Portuguese URL */}
-          <Route path="/financas" element={<Navigate to="/financas" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

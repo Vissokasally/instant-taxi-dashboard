@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
@@ -122,6 +123,15 @@ const Vehicles = () => {
 
   const exportVehicleReport = () => {
     try {
+      if (!vehicles || vehicles.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não há veículos para exportar."
+        });
+        return;
+      }
+      
       const headers = ["Marca", "Modelo", "Matrícula", "Ano", "Quilometragem", "Motorista"];
       
       const rows = vehicles.map((vehicle) => [
@@ -132,6 +142,14 @@ const Vehicles = () => {
         vehicle.quilometragem.toLocaleString('pt-AO') + ' km',
         vehicle.motorista?.nome || 'Não atribuído'
       ]);
+      
+      const totalVehicles = vehicles.length;
+      const averageKm = totalVehicles > 0 
+        ? vehicles.reduce((sum, v) => sum + v.quilometragem, 0) / totalVehicles 
+        : 0;
+      const averageAge = totalVehicles > 0 
+        ? vehicles.reduce((sum, v) => sum + (new Date().getFullYear() - v.ano), 0) / totalVehicles 
+        : 0;
       
       const summaryData = [
         { label: "Total de Veículos", value: totalVehicles.toString() },
@@ -151,7 +169,7 @@ const Vehicles = () => {
         description: result.message
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao exportar relatório:', error);
       toast({
         variant: "destructive",
