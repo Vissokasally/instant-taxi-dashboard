@@ -1,16 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import DashboardCard from '@/components/dashboard/DashboardCard';
-import DataTable from '@/components/ui/DataTable';
 import VehicleForm from '@/components/vehicles/VehicleForm';
-import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, Car, Users, Calendar, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPdfReport } from '@/utils/pdfGenerator';
+import VehicleHeader from '@/components/vehicles/VehicleHeader';
+import VehicleStats from '@/components/vehicles/VehicleStats';
+import VehicleList from '@/components/vehicles/VehicleList';
 
 type Vehicle = {
   id: string;
@@ -179,148 +177,21 @@ const Vehicles = () => {
     }
   };
 
-  const totalVehicles = vehicles.length;
-  const averageKm = totalVehicles > 0 
-    ? vehicles.reduce((sum, v) => sum + v.quilometragem, 0) / totalVehicles 
-    : 0;
-  const averageAge = totalVehicles > 0 
-    ? vehicles.reduce((sum, v) => sum + (new Date().getFullYear() - v.ano), 0) / totalVehicles 
-    : 0;
-
-  const vehiclesColumns = [
-    { 
-      header: 'Veículo', 
-      accessorKey: 'marca' as const,
-      cell: (row: Vehicle) => (
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/10 p-2 rounded-full">
-            <Car className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <div className="font-medium">
-              {row.marca} {row.modelo}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {row.matricula}
-            </div>
-          </div>
-        </div>
-      )
-    },
-    { 
-      header: 'Ano', 
-      accessorKey: 'ano' as const 
-    },
-    { 
-      header: 'Quilometragem', 
-      accessorKey: 'quilometragem' as const,
-      cell: (row: Vehicle) => (
-        <span>{row.quilometragem.toLocaleString('pt-AO')} km</span>
-      )
-    },
-    { 
-      header: 'Motorista', 
-      accessorKey: 'motorista' as const,
-      cell: (row: Vehicle) => (
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <span>{row.motorista?.nome || 'Não atribuído'}</span>
-        </div>
-      )
-    },
-    { 
-      header: 'Ações', 
-      accessorKey: 'id' as const,
-      cell: (row: Vehicle) => (
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
-            onClick={() => handleDeleteVehicle(row.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
-    },
-  ];
-
   return (
     <AppLayout>
-      <header className="mb-8 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-6">Gestão de Veículos</h1>
-        
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <p className="text-muted-foreground">
-            Gerencie todos os veículos da sua frota de táxis.
-          </p>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              className="flex items-center gap-2"
-              onClick={exportVehicleReport}
-            >
-              <Download className="h-4 w-4" />
-              <span>Exportar Relatório</span>
-            </Button>
-            <Button 
-              className="flex items-center gap-2"
-              onClick={() => setOpenForm(true)}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Adicionar Veículo</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <VehicleHeader 
+        onAddVehicle={() => setOpenForm(true)}
+        onExportReport={exportVehicleReport}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <DashboardCard title="Veículos Ativos" isGlass={true}>
-          <div className="flex flex-col items-center justify-center py-4">
-            <div className="text-4xl font-semibold text-primary mb-2">{totalVehicles}</div>
-            <p className="text-sm text-muted-foreground">Total da frota</p>
-          </div>
-        </DashboardCard>
-        
-        <DashboardCard title="Quilometragem Média" isGlass={true}>
-          <div className="flex flex-col items-center justify-center py-4">
-            <div className="text-4xl font-semibold text-primary mb-2">
-              {Math.round(averageKm).toLocaleString('pt-AO')}
-            </div>
-            <p className="text-sm text-muted-foreground">Quilómetros</p>
-          </div>
-        </DashboardCard>
-        
-        <DashboardCard title="Idade Média" isGlass={true}>
-          <div className="flex flex-col items-center justify-center py-4">
-            <div className="text-4xl font-semibold text-primary mb-2">{averageAge.toFixed(1)}</div>
-            <p className="text-sm text-muted-foreground">Anos</p>
-          </div>
-        </DashboardCard>
-      </div>
+      <VehicleStats vehicles={vehicles} />
 
-      <DashboardCard title="Lista de Veículos">
-        <div className="border border-border rounded-lg overflow-hidden">
-          <DataTable 
-            columns={vehiclesColumns} 
-            data={vehicles}
-            loading={isLoading}
-            emptyState={
-              <div className="flex flex-col items-center justify-center py-8">
-                <p className="text-muted-foreground">Nenhum veículo registrado.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => setOpenForm(true)}
-                >
-                  Adicionar Veículo
-                </Button>
-              </div>
-            }
-          />
-        </div>
-      </DashboardCard>
+      <VehicleList
+        vehicles={vehicles}
+        isLoading={isLoading}
+        onAddVehicle={() => setOpenForm(true)}
+        onDeleteVehicle={handleDeleteVehicle}
+      />
 
       <VehicleForm 
         open={openForm} 
