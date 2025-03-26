@@ -43,7 +43,7 @@ export function BasicInfoFields({ form }: BasicInfoFieldsProps) {
         
         <FormField
           control={form.control}
-          name="cartaConducao"
+          name="carta_conducao"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Carta de Condução</FormLabel>

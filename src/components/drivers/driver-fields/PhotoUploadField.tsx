@@ -2,22 +2,23 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { UseFormSetValue } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 import { DriverFormValues } from '../driver-types';
 
 interface PhotoUploadFieldProps {
-  imagePreview: string | null;
-  setImagePreview: React.Dispatch<React.SetStateAction<string | null>>;
-  setValue: UseFormSetValue<DriverFormValues>;
+  form: UseFormReturn<DriverFormValues>;
+  onPhotoSelected: React.Dispatch<React.SetStateAction<File | null>>;
+  initialPhotoUrl?: string;
 }
 
-export function PhotoUploadField({ imagePreview, setImagePreview, setValue }: PhotoUploadFieldProps) {
+export function PhotoUploadField({ form, onPhotoSelected, initialPhotoUrl }: PhotoUploadFieldProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(initialPhotoUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setValue('foto', file);
+      onPhotoSelected(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);

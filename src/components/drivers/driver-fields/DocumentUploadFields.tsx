@@ -1,33 +1,35 @@
 
-import React, { useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { FileText } from 'lucide-react';
 import { FormLabel } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { UseFormSetValue } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 import { DriverFormValues } from '../driver-types';
 
 interface DocumentUploadFieldsProps {
-  biFileName: string | null;
-  setBiFileName: React.Dispatch<React.SetStateAction<string | null>>;
-  cartaFileName: string | null;
-  setCartaFileName: React.Dispatch<React.SetStateAction<string | null>>;
-  setValue: UseFormSetValue<DriverFormValues>;
+  form: UseFormReturn<DriverFormValues>;
+  onBiSelected: React.Dispatch<React.SetStateAction<File | null>>;
+  onCartaSelected: React.Dispatch<React.SetStateAction<File | null>>;
+  initialBiUrl?: string;
+  initialCartaUrl?: string;
 }
 
 export function DocumentUploadFields({ 
-  biFileName, 
-  setBiFileName, 
-  cartaFileName, 
-  setCartaFileName, 
-  setValue 
+  form, 
+  onBiSelected, 
+  onCartaSelected,
+  initialBiUrl,
+  initialCartaUrl
 }: DocumentUploadFieldsProps) {
+  const [biFileName, setBiFileName] = useState<string | null>(initialBiUrl ? 'Documento carregado' : null);
+  const [cartaFileName, setCartaFileName] = useState<string | null>(initialCartaUrl ? 'Documento carregado' : null);
   const biFileInputRef = useRef<HTMLInputElement>(null);
   const cartaFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleBiPdfChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setValue('bi_pdf', file);
+      onBiSelected(file);
       setBiFileName(file.name);
     }
   };
@@ -35,7 +37,7 @@ export function DocumentUploadFields({
   const handleCartaPdfChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setValue('carta_pdf', file);
+      onCartaSelected(file);
       setCartaFileName(file.name);
     }
   };
